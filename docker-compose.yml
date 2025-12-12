@@ -1,0 +1,48 @@
+version: "3.8"
+services:
+  ollama:
+    image: ollama/ollama:latest
+    ports: ["11434:11434"]
+    volumes: ["ollama:/root/.ollama"]
+    restart: unless-stopped
+    entrypoint: ["/bin/sh","-c","ollama serve & sleep 2 && ollama pull llama3.1:8b-instruct && ollama pull nomic-embed-text && tail -f /dev/null"]
+
+  chroma:
+    image: chromadb/chroma:latest
+    environment: [ "IS_PERSISTENT=TRUE" ]
+    volumes: ["chroma:/chroma"]
+    ports: ["8000:8000"]
+    restart: unless-stopped
+
+  neo4j:
+    image: neo4j:5
+    environment:
+      - NEO4J_AUTH=neo4j/please_change
+      - NEO4J_dbms_memory_pagecache_size=1G
+      - NEO4J_dbms_memory_heap_initial__size=1G
+      - NEO4J_dbms_memory_heap_max__size=2G
+    ports: ["7474:7474","7687:7687"]
+    volumes: ["neo4j_data:/data"]
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    env_file: ./backend/.env
+    volumes: ["data:/data"]
+    depends_on: [ollama, chroma, neo4j]
+    ports: ["8001:8001"]
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    environment:
+      - NEXT_PUBLIC_API_BASE=http://localhost:8001
+    ports: ["3000:3000"]
+    depends_on: [backend]
+    restart: unless-stopped
+
+volumes:
+  chroma:
+  neo4j_data:
+  ollama:
+  data:
