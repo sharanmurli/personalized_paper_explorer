@@ -121,6 +121,3 @@ Link to be updated
 * Multi-user shared research sessions
 * Expanded insight clustering and trend analysis
 
-
-
-Just tell me what you’d like next.
